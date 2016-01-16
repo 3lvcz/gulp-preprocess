@@ -6,7 +6,10 @@ var path  = require('path');
 module.exports = function (options) {
   var opts    = _.merge({}, options);
   var context = _.merge(
-    {}, process.env, options.context, customMergerFor(options)
+    {},
+    process.env,
+    options ? options.context : {},
+    customMergerFor(options)
   );
 
   function ppStream(file, callback) {
@@ -42,7 +45,11 @@ function getExtension(filename) {
 // importantly, re-enabling the use of @ifdef and @ifndef in preprocess
 function customMergerFor(options) {
   return function(objVal, sourceVal, key, object, source) {
-    if (source === options.context && sourceVal === undefined) {
+    var shouldAssign = typeof(options) !== 'undefined' &&
+      source === options.context &&
+      sourceVal === undefined;
+
+    if (shouldAssign) {
       object[key] = sourceVal;
     }
   };
