@@ -5,7 +5,12 @@ var path  = require('path');
 
 module.exports = function (options) {
   var opts    = _.merge({}, options);
-  var context = _.merge({}, process.env, opts.context);
+  var context = _.merge(
+    {},
+    process.env,
+    options ? options.context : {},
+    customMergerFor(options)
+  );
 
   function ppStream(file, callback) {
     var contents, extension;
@@ -33,4 +38,19 @@ module.exports = function (options) {
 function getExtension(filename) {
   var ext = path.extname(filename||'').split('.');
   return ext[ext.length - 1];
+}
+
+// Allows using 'undefined' values as part of the explicit context passed
+// to options, hence allowing override of environment variables, but more
+// importantly, re-enabling the use of @ifdef and @ifndef in preprocess
+function customMergerFor(options) {
+  return function(objVal, sourceVal, key, object, source) {
+    var shouldAssign = typeof(options) !== 'undefined' &&
+      source === options.context &&
+      sourceVal === undefined;
+
+    if (shouldAssign) {
+      object[key] = sourceVal;
+    }
+  };
 }
